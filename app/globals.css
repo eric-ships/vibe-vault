@@ -1,8 +1,22 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fff8f0;
+  --foreground: #2d1832;
+  --primary: #ff3e78;
+  --secondary: #00c2ba;
+  --accent: #ffbe0b;
+  --miami-pink: #ff61ab;
+  --miami-blue: #00b8ff;
+  --miami-yellow: #ffdd00;
+  --miami-green: #18e7c1;
+  --miami-purple: #8c52ff;
+  
+  /* Utility variables with opacity */
+  --miami-blue-30: rgba(0, 184, 255, 0.3);
+  --miami-blue-50: rgba(0, 184, 255, 0.5);
 }
 
 @theme inline {
@@ -14,13 +28,205 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #1e1026;
+    --foreground: #f0e6ff;
+    --primary: #ff5e94;
+    --secondary: #00e6d7;
+    --accent: #ffd042;
   }
 }
 
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, var(--miami-pink), var(--miami-blue));
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, var(--miami-blue), var(--miami-purple));
+}
+
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+  background-image: url('/images/grid-bg.png');
+  background-size: cover;
+  background-attachment: fixed;
+  background-position: center;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(255, 97, 171, 0.1), transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(0, 184, 255, 0.1), transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(24, 231, 193, 0.05), transparent 70%);
+}
+
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+  
+  /* Neon text effect for headings */
+  h1, h2 {
+    text-shadow: 
+      0 0 5px rgba(255, 97, 171, 0.5),
+      0 0 10px rgba(255, 97, 171, 0.3),
+      0 0 20px rgba(255, 97, 171, 0.1);
+  }
+  
+  input, select, textarea {
+    @apply bg-white/80 backdrop-blur-sm border border-white/20 rounded-lg px-4 py-2;
+    @apply focus:outline-none focus:ring-2;
+    --tw-ring-color: var(--miami-blue-30);
+    --tw-ring-opacity: 1;
+    border-color: var(--miami-blue-50);
+  }
+}
+
+@layer components {
+  .miami-gradient {
+    background: linear-gradient(to right, var(--miami-pink), var(--miami-blue));
+  }
+  
+  .miami-text-gradient {
+    background: linear-gradient(to right, var(--miami-pink), var(--miami-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+  }
+  
+  .miami-card {
+    @apply rounded-lg shadow-lg;
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 
+      0 4px 6px rgba(0, 0, 0, 0.1), 
+      0 0 20px rgba(255, 97, 171, 0.1),
+      0 0 40px rgba(0, 184, 255, 0.05);
+    transition: all 0.3s ease;
+  }
+  
+  .miami-card:hover {
+    box-shadow: 
+      0 6px 12px rgba(0, 0, 0, 0.15), 
+      0 0 25px rgba(255, 97, 171, 0.15),
+      0 0 50px rgba(0, 184, 255, 0.1);
+    transform: translateY(-2px);
+  }
+  
+  /* Dark mode adjustments */
+  @media (prefers-color-scheme: dark) {
+    .miami-card {
+      background-color: rgba(30, 16, 38, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  }
+  
+  .miami-button {
+    @apply font-bold py-2 px-6 rounded-full transition-all;
+    background: linear-gradient(135deg, var(--miami-pink), var(--miami-blue));
+    color: white;
+    border: none;
+    box-shadow: 
+      0 4px 10px rgba(0, 0, 0, 0.1),
+      0 0 15px rgba(255, 97, 171, 0.3);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+  }
+  
+  .miami-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: all 0.6s;
+    z-index: -1;
+  }
+  
+  .miami-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 6px 14px rgba(0, 0, 0, 0.15),
+      0 0 20px rgba(255, 97, 171, 0.4);
+  }
+  
+  .miami-button:hover::before {
+    left: 100%;
+  }
+  
+  .miami-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+  
+  /* Music player specific styles */
+  .player-controls {
+    @apply flex items-center justify-center space-x-4 my-4;
+  }
+  
+  .player-control-button {
+    @apply w-10 h-10 rounded-full flex items-center justify-center transition-all;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .player-control-button:hover {
+    @apply transform scale-110;
+    background: linear-gradient(135deg, var(--miami-pink), var(--miami-blue));
+  }
+}
+
+/* Animation utilities */
+@layer utilities {
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+  
+  @keyframes glow {
+    from {
+      box-shadow: 0 0 10px rgba(255, 97, 171, 0.5);
+    }
+    to {
+      box-shadow: 0 0 20px rgba(0, 184, 255, 0.8);
+    }
+  }
+  
+  .animate-pulse-grow {
+    animation: pulse-grow 2s ease-in-out infinite alternate;
+  }
+  
+  @keyframes pulse-grow {
+    from {
+      transform: scale(1);
+    }
+    to {
+      transform: scale(1.05);
+    }
+  }
 }

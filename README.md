@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vibe Vault
+
+A decentralized music streaming platform that enables direct payments from listeners to artists based on listening time.
+
+## Overview
+
+Vibe Vault reimagines music streaming by leveraging blockchain technology to create a more equitable system for artists. Instead of receiving minimal royalties through traditional platforms, artists on Vibe Vault receive direct cryptocurrency payments from listeners based on the duration of their listening sessions.
+
+### Key Features
+
+- **Stream Music**: Browse and stream high-quality music from various artists
+- **Direct Payments**: Automatically pay artists in cryptocurrency based on listening time
+- **Wallet Integration**: Connect your Ethereum wallet (like MetaMask) to enable payments
+- **Transparent Payment System**: See exactly how much you're paying and when payments are made
+
+## Technology Stack
+
+- **Frontend**: Next.js, React, TailwindCSS
+- **State Management**: Zustand
+- **Blockchain Interaction**: ethers.js, Web3.js
+- **Audio Playback**: HTML5 Audio API, React Audio Player
+
+## How It Works
+
+1. **Connect Wallet**: Users connect their Ethereum wallet to the platform
+2. **Browse and Listen**: Users browse available songs and start listening
+3. **Automatic Payments**: As users listen, small cryptocurrency payments are automatically sent to the artists at regular intervals
+4. **Payment Calculation**: Payment amount is calculated based on the song's price per minute and the listening duration
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- Yarn or npm
+- MetaMask or another Ethereum wallet browser extension
+
+### Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/yourusername/vibe-vault.git
+cd vibe-vault
+
+# Install dependencies
+npm install
+
+# Start the development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app will be available at http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Using the App
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Connect Your Wallet**: Click the "Connect Wallet" button to connect your Ethereum wallet
+2. **Browse Songs**: Look through the available songs in the library
+3. **Play Music**: Click on a song to begin playback
+4. **Monitor Payments**: Watch as payments are automatically sent to artists as you listen
 
-## Learn More
+## Development Roadmap
 
-To learn more about Next.js, take a look at the following resources:
+- **Playlist Creation**: Allow users to create and share playlists
+- **Artist Profiles**: Dedicated pages for artists with bios and all their music
+- **Multiple Payment Options**: Support for multiple cryptocurrencies
+- **Subscription Model**: Optional subscription for reduced per-stream costs
+- **Mobile App**: Native mobile applications for iOS and Android
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Deploy on Vercel
+## Acknowledgments
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- All the artists who contributed music
+- The Web3 and Ethereum communities for making decentralized applications possible
+- Open source audio and blockchain libraries that power this application

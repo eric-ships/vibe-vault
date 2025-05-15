@@ -7,6 +7,8 @@ import usePlayerStore from '../hooks/usePlayerStore';
 import { sendPayment, DEFAULT_RECIPIENT_NAME } from '../utils/cryptoPayment';
 import { useToast } from '../ToastContainer';
 
+const BASE_SCAN_URL = 'https://sepolia.basescan.org/address/0xbAAcd6217604199b7eB0925E8404C0B49E935EaA#internaltx';
+
 const MusicPlayer: React.FC = () => {
   const { 
     currentSong, 
@@ -36,6 +38,7 @@ const MusicPlayer: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'none' | 'pending' | 'success' | 'error'>('none');
   const [paymentMessage, setPaymentMessage] = useState('');
+  const [showConnectPrompt, setShowConnectPrompt] = useState(false);
   
   // Timer for tracking listen time
   const listenTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -43,18 +46,14 @@ const MusicPlayer: React.FC = () => {
   const paymentTimerRef = useRef<NodeJS.Timeout | null>(null);
   // Flag to track if we've shown the "now playing" toast for the current song
   const hasShownNowPlayingToastRef = useRef(false);
+  // Timer for free preview period
+  const freePreviewTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
-  
-  // Add this line toward the beginning of the component
-  useEffect(() => {
-    // Add an initial toast when component mounts to test if toasts are working
-    showToast('Vibe Vault is ready to play music!', 'info');
-  }, [showToast]);
   
   // Handle play/pause
   useEffect(() => {
@@ -78,6 +77,18 @@ const MusicPlayer: React.FC = () => {
           updateListenTime(1); // Update every second
         }, 1000);
       }
+      
+      // Start free preview timer if not connected
+      if (!isConnected && freePreviewTimerRef.current === null) {
+        setShowConnectPrompt(false); // Reset any existing prompt
+        
+        freePreviewTimerRef.current = setTimeout(() => {
+          // Pause playback after 10 seconds if wallet is not connected
+          pause();
+          setShowConnectPrompt(true);
+          showToast('Connect your wallet to continue listening', 'info');
+        }, 10000); // 10 seconds free preview
+      }
     } else {
       audioRef.current.pause();
       
@@ -97,13 +108,35 @@ const MusicPlayer: React.FC = () => {
         clearInterval(paymentTimerRef.current);
         paymentTimerRef.current = null;
       }
+      if (freePreviewTimerRef.current) {
+        clearTimeout(freePreviewTimerRef.current);
+        freePreviewTimerRef.current = null;
+      }
     };
-  }, [isPlaying, currentSong, pause, updateListenTime, showToast]);
+  }, [isPlaying, currentSong, pause, updateListenTime, showToast, isConnected]);
+  
+  // Clear free preview timer if wallet gets connected
+  useEffect(() => {
+    if (isConnected) {
+      setShowConnectPrompt(false);
+      if (freePreviewTimerRef.current) {
+        clearTimeout(freePreviewTimerRef.current);
+        freePreviewTimerRef.current = null;
+      }
+    }
+  }, [isConnected]);
   
   // Reset hasShownNowPlayingToast when song changes
   useEffect(() => {
     if (currentSong) {
       hasShownNowPlayingToastRef.current = false;
+      setShowConnectPrompt(false);
+      
+      // Clear any existing preview timer when song changes
+      if (freePreviewTimerRef.current) {
+        clearTimeout(freePreviewTimerRef.current);
+        freePreviewTimerRef.current = null;
+      }
     }
   }, [currentSong]);
   
@@ -222,10 +255,14 @@ const MusicPlayer: React.FC = () => {
       if (result.success) {
         setPaymentStatus('success');
         const paymentAmount = (parseFloat(result.paymentDetails?.amount || '0') / 1e18).toFixed(8);
+        
+        // Store the explorer URL and create a rich HTML message for the UI
+        const explorerUrl = result.paymentDetails?.explorerUrl || BASE_SCAN_URL;
+        
         const successMessage = `Paid ${paymentAmount} ETH to ${DEFAULT_RECIPIENT_NAME}`;
         setPaymentMessage(successMessage);
         
-        // Show toast notification
+        // Use basic message for toast notification
         showToast(successMessage, 'success');
         
         resetListenTime();
@@ -246,6 +283,21 @@ const MusicPlayer: React.FC = () => {
       setPaymentStatus('none');
       setPaymentMessage('');
     }, 5000);
+  };
+  
+  const formatIntervalPrice = (pricePerMinute: number): string => {
+    // Calculate price per interval (instead of per minute)
+    const intervalInMinutes = paymentInterval / 60;
+    const pricePerInterval = (pricePerMinute * intervalInMinutes) / 1e18;
+    
+    // Format the price in a more readable way
+    if (pricePerInterval < 0.000001) {
+      return `${(pricePerInterval * 1000000).toFixed(2)}μETH`;
+    } else if (pricePerInterval < 0.001) {
+      return `${(pricePerInterval * 1000).toFixed(2)}mETH`;
+    } else {
+      return `${pricePerInterval.toFixed(4)}ETH`;
+    }
   };
   
   if (!currentSong) {
@@ -364,42 +416,47 @@ const MusicPlayer: React.FC = () => {
       
       {/* Payment info */}
       <div className="mt-4 bg-white/20 dark:bg-white/5 rounded-lg p-4 backdrop-blur-sm border border-white/10">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-sm font-semibold text-primary">Payment Information</h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-base font-semibold text-primary">Payment Information</h3>
           {isSmartWallet && (
-            <div className="px-2 py-1 rounded-full bg-miami-pink/10 text-miami-pink text-xs font-medium">
+            <div className="px-2 py-1 rounded-full bg-miami-pink/10 text-miami-pink text-sm font-medium">
               Using Smart Wallet
             </div>
           )}
         </div>
         
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <span className="text-sm text-foreground/70">Current listening time:</span>
-            <span className="text-sm font-medium bg-miami-blue/10 text-miami-blue px-2 py-0.5 rounded-full">
+            <span className="text-sm text-foreground/80 font-medium">Current listening time:</span>
+            <span className="text-sm font-medium bg-miami-blue/10 text-miami-blue px-3 py-1 rounded-full">
               {formatTime(listenTime)}
             </span>
           </div>
           
           <div className="flex justify-between items-center">
-            <span className="text-sm text-foreground/70">Payment interval:</span>
-            <span className="text-sm font-medium bg-miami-green/10 text-miami-green px-2 py-0.5 rounded-full">
+            <span className="text-sm text-foreground/80 font-medium">Payment interval:</span>
+            <span className="text-sm font-medium bg-miami-green/10 text-miami-green px-3 py-1 rounded-full">
               {formatTime(paymentInterval)}
             </span>
           </div>
           
           <div className="flex justify-between items-center">
-            <span className="text-sm text-foreground/70">Price per minute:</span>
-            <span className="text-sm font-medium bg-miami-yellow/10 text-miami-purple px-2 py-0.5 rounded-full">
-              {(currentSong.pricePerMinute / 1e18).toFixed(8)} ETH
+            <span className="text-sm text-foreground/80 font-medium">Price per interval:</span>
+            <span className="text-sm font-medium bg-miami-yellow/10 text-miami-purple px-3 py-1 rounded-full">
+              {formatIntervalPrice(currentSong.pricePerMinute)}
             </span>
           </div>
           
           <div className="flex justify-between items-center">
-            <span className="text-sm text-foreground/70">Payments to:</span>
-            <span className="text-sm font-medium bg-miami-purple/10 text-miami-blue px-2 py-0.5 rounded-full font-mono">
+            <span className="text-sm text-foreground/80 font-medium">Payments to:</span>
+            <a 
+              href={BASE_SCAN_URL} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-sm font-medium bg-miami-purple/10 text-miami-blue px-3 py-1 rounded-full font-mono hover:bg-miami-purple/20 transition-colors"
+            >
               {DEFAULT_RECIPIENT_NAME}
-            </span>
+            </a>
           </div>
         </div>
         
@@ -441,6 +498,22 @@ const MusicPlayer: React.FC = () => {
           </div>
         )}
       </div>
+      
+      {/* Connect prompt overlay */}
+      {showConnectPrompt && !isConnected && (
+        <div className="mt-4 p-4 bg-miami-gradient/30 backdrop-blur-md rounded-lg border border-white/30 text-center">
+          <h3 className="text-lg font-semibold text-white mb-2">Free Preview Ended</h3>
+          <p className="text-white/90 mb-4">
+            Connect your Base Account to continue listening to this track and support the artist.
+          </p>
+          <button 
+            className="miami-button py-2 px-6"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          >
+            Connect Wallet
+          </button>
+        </div>
+      )}
       
       {/* Hidden audio element */}
       <audio

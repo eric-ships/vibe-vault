@@ -21,29 +21,28 @@ const WalletConnect: React.FC = () => {
   const { connectors, connect, isPending: isConnecting, error: connectError } = useConnect();
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
-  const { data: balanceData, isLoading: isBalanceLoading } = useBalance({
-    address: address as `0x${string}`,
-    chainId: baseSepolia.id, // Specify Base Sepolia chain
-  });
+  
+  // Only fetch balance when we have an address
+  const { data: balanceData, isLoading: isBalanceLoading, refetch: refetchBalance } = useBalance(
+    address ? {
+      address: address as `0x${string}`,
+      chainId: baseSepolia.id, // Specify Base Sepolia chain
+    } : undefined
+  );
   
   const [error, setError] = useState<string | null>(null);
-  
-  // Add a state variable to force refresh
-  const [forceRefresh, setForceRefresh] = useState(false);
   
   // Add periodic balance refresh
   useEffect(() => {
     // Refresh balance every 10 seconds while connected
-    if (isConnected) {
+    if (isConnected && address) {
       const refreshInterval = setInterval(() => {
-        // The refetch function is not directly accessible in this version
-        // Instead, a re-render will trigger a new balance fetch
-        setForceRefresh(prev => !prev);
+        refetchBalance?.();
       }, 10000);
       
       return () => clearInterval(refreshInterval);
     }
-  }, [isConnected]);
+  }, [isConnected, address, refetchBalance]);
   
   // Sync Wagmi connection state with our store
   useEffect(() => {
@@ -101,7 +100,66 @@ const WalletConnect: React.FC = () => {
   
   // Manual balance refresh
   const refreshBalance = () => {
-    setForceRefresh(prev => !prev);
+    refetchBalance?.();
+  };
+  
+  // Update the CopyableAddress component to include a BaseScan link
+  const CopyableAddress: React.FC<{ address: string }> = ({ address }) => {
+    const [copied, setCopied] = useState(false);
+    
+    const copyToClipboard = () => {
+      navigator.clipboard.writeText(address).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+      });
+    };
+    
+    // Generate BaseScan URL dynamically
+    const baseScanUrl = `https://sepolia.basescan.org/address/${address}#internaltx`;
+    
+    return (
+      <div className="relative w-full">
+        <div className="flex flex-col items-center">
+          <div 
+            onClick={copyToClipboard}
+            className="font-mono text-sm cursor-pointer hover:bg-white/10 transition-colors py-1.5 px-3 rounded inline-flex items-center justify-center w-full break-all"
+            title="Click to copy address"
+          >
+            <span>{address}</span>
+            <svg 
+              className={`w-4 h-4 ml-1.5 flex-shrink-0 transition-opacity ${copied ? 'opacity-100' : 'opacity-50'}`} 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              {copied ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2" />
+              )}
+            </svg>
+          </div>
+          
+          <a 
+            href={baseScanUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 text-xs text-miami-blue hover:text-miami-pink transition-colors flex items-center"
+          >
+            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+            View on BaseScan
+          </a>
+        </div>
+        
+        {copied && (
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-6 bg-miami-blue/90 text-white text-xs py-1 px-2 rounded-md z-10">
+            Address copied!
+          </div>
+        )}
+      </div>
+    );
   };
   
   return (
@@ -112,7 +170,7 @@ const WalletConnect: React.FC = () => {
             <div className="flex items-center">
               <div className="w-3 h-3 bg-miami-green rounded-full mr-2 animate-pulse"></div>
               <span className="font-medium text-primary">
-                {isSmartWallet ? 'Coinbase Smart Wallet' : 'Connected Wallet'}
+                {isSmartWallet ? 'Base Account' : 'Connected Wallet'}
               </span>
             </div>
             <div className="bg-miami-yellow/10 px-2 py-1 rounded-full">
@@ -121,7 +179,7 @@ const WalletConnect: React.FC = () => {
           </div>
           
           <div className="bg-gradient-to-r from-miami-pink/10 to-miami-blue/10 w-full py-3 px-4 rounded-xl border border-white/20 mb-3">
-            <p className="text-sm font-mono text-center">{formatAddress(walletAddress)}</p>
+            <CopyableAddress address={walletAddress} />
           </div>
           
           {/* Balance Display */}
@@ -177,9 +235,9 @@ const WalletConnect: React.FC = () => {
       ) : (
         <div className="miami-card p-5 flex flex-col items-center">
           <div className="mb-4 text-center">
-            <h3 className="text-lg font-semibold text-primary mb-2">Connect Coinbase Wallet</h3>
+            <h3 className="text-lg font-semibold text-primary mb-2">Sign in with Base Account</h3>
             <p className="text-sm text-foreground/70">
-              Connect Coinbase Wallet to pay artists directly for their music using Base Smart Wallet.
+              Connect your Base Account to pay artists directly for their music.
             </p>
           </div>
           
@@ -211,7 +269,7 @@ const WalletConnect: React.FC = () => {
                 <svg className="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
-                <span>Connect Coinbase Wallet</span>
+                <span>Sign in with Base Account</span>
               </>
             )}
           </button>

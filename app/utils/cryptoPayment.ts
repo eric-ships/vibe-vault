@@ -10,6 +10,9 @@ export const DEFAULT_RECIPIENT_NAME = 'ericliu.base.eth';
 // Actual wallet address to receive payments
 export const DEFAULT_RECIPIENT_ADDRESS = '0xbAAcd6217604199b7eB0925E8404C0B49E935EaA';
 
+// Add BASE_SCAN_URL constant
+export const BASE_SCAN_URL = 'https://sepolia.basescan.org/address/0xbAAcd6217604199b7eB0925E8404C0B49E935EaA#internaltx';
+
 // Basic payment interface
 export interface PaymentDetails {
   recipientName: string; // Display name (ENS)
@@ -18,6 +21,7 @@ export interface PaymentDetails {
   timestamp: number;
   songId: string;
   duration: number; // in seconds
+  explorerUrl: string; // URL to view the transaction
 }
 
 // Keep a record of all payments made in the current session
@@ -74,7 +78,8 @@ export const sendPayment = async (
       amount: paymentAmount,
       timestamp: Date.now(),
       songId: song.id,
-      duration: listenTimeSeconds
+      duration: listenTimeSeconds,
+      explorerUrl: BASE_SCAN_URL
     };
     
     // Add to payment history
